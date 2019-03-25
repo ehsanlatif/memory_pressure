@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
     TextView total_memory,process_pressure,total_pressure,process_pss,free_memory;
     Intent serviceIntent;
     MySystemService myService;
+     Button button;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,8 +43,32 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
         {
             ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
         }
+        serviceIntent = new Intent(MainActivity.this, MySystemService.class);
+        Bundle extras=getIntent().getExtras();
 
-        final Button button=findViewById(R.id.button);
+        if(extras!=null)
+        {
+            Toast.makeText(getApplicationContext(),extras.toString(),Toast.LENGTH_LONG).show();
+            int pres=extras.getInt("pressure",0);
+            String proc=extras.getString("proc_name");
+            int per=extras.getInt("period",0);
+            int init_pers=extras.getInt("initial_pressure",0);
+            String output_file=extras.getString("output");
+            serviceIntent.putExtra("filename", output_file);
+            serviceIntent.putExtra("duration", per);
+            serviceIntent.putExtra("repeat", true);
+            serviceIntent.putExtra("process", proc);
+            serviceIntent.putExtra("pressure", pres);
+            serviceIntent.putExtra("initial_pressure", init_pers);
+
+            Toast.makeText(getApplicationContext(),pres + " , "+proc+" , "+per+" , "+output_file,Toast.LENGTH_LONG).show();
+            //  startService(serviceIntent); //Starting the service
+            bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
+            //textView.setText("Service is Running!");
+//            /button.setText("Stop");
+//            started=true;
+        }
+        button=findViewById(R.id.button);
         period_layout=findViewById(R.id.textInputLayout3);
         pressure=findViewById(R.id.pressure);
         process_name=findViewById(R.id.package_name);
@@ -56,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
 //        process_pss=findViewById(R.id.process_pss);
 //        free_memory=findViewById(R.id.free_memory);
 
-        serviceIntent = new Intent(MainActivity.this, MySystemService.class);
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {

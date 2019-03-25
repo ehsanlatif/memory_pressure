@@ -11,7 +11,7 @@
 using namespace std;
 static vector<string> s;
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jint JNICALL
 Java_com_example_myapplication_MySystemService_PassSizeToNative(
         JNIEnv* env,
         jobject instance,
@@ -73,7 +73,7 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 
     string sstr(size, ' ');
     s.push_back(sstr);
-
+    int hertz=sysconf(_SC_CLK_TCK);
 //            int tSize = 0, resident = 0, share = 0;
 //            int tSize1 = 0, resident1 = 0, share1 = 0;
 //            ifstream buffer("/proc/self/statm");
@@ -103,7 +103,7 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 //        fflush(file);
 //        fclose(file);
     //}
-    //return env->NewStringUTF(hello.c_str());
+    return hertz;//env->NewStringUTF(hello.c_str());
 }
 
 
