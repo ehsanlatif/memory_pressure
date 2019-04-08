@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.app.Service;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
+import android.content.ComponentCallbacks2;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.os.Binder;
@@ -12,6 +13,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -49,6 +51,80 @@ public class MySystemService extends Service {
     static {
         System.loadLibrary("native-lib");
     }
+
+    public void memoryStat(int level) {
+
+        // Determine which lifecycle or system event was raised.
+        switch (level) {
+
+            case ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN:
+
+                /*
+                   Release any UI objects that currently hold memory.
+
+                   The user interface has moved to the background.
+                */
+
+                break;
+
+            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE: {
+                Log.d(TAG, "on Moderat Pressure");
+                SaveText(fileName+".csv", "Moderat Pressure, , , , \n");
+            }
+                break;
+            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW: {
+                Log.d(TAG, "on High Pressure");
+                SaveText(fileName+".csv", "High Pressure, , , , \n");
+            }
+                break;
+            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL:{
+                Log.d(TAG,"on Critical Pressure");
+                SaveText(fileName+".csv", "Critical Pressure, , , , \n");
+            }
+                break;
+
+                /*
+                   Release any memory that your app doesn't need to run.
+
+                   The device is running low on memory while the app is running.
+                   The event raised indicates the severity of the memory-related event.
+                   If the event is TRIM_MEMORY_RUNNING_CRITICAL, then the system will
+                   begin killing background processes.
+                */
+
+            case ComponentCallbacks2.TRIM_MEMORY_BACKGROUND:
+            {
+                Log.d(TAG, "on Moderat Pressure");
+                SaveText(fileName+".csv", "Background Pressure, , , , \n");
+            }
+            case ComponentCallbacks2.TRIM_MEMORY_MODERATE:
+            {
+                Log.d(TAG, "on Moderat Pressure");
+                SaveText(fileName+".csv", "Moderat Pressure, , , , \n");
+            }
+            case ComponentCallbacks2.TRIM_MEMORY_COMPLETE:
+
+                /*
+                   Release as much memory as the process can.
+
+                   The app is on the LRU list and the system is running low on memory.
+                   The event raised indicates where the app sits within the LRU list.
+                   If the event is TRIM_MEMORY_COMPLETE, the process will be one of
+                   the first to be terminated.
+                */
+
+                break;
+
+            default:
+                /*
+                  Release any non-critical data structures.
+
+                  The app received an unrecognized memory level value
+                  from the system. Treat this as a generic low-memory message.
+                */
+                break;
+        }
+    }
     public native int PassSizeToNative(int a,boolean b);
 
     private static MySystemService instance = null;
@@ -62,7 +138,7 @@ public class MySystemService extends Service {
     Callbacks activity;
 
 
-    // Timer timer = new Timer();
+     Timer timer = new Timer();
     ScheduledExecutorService scheduler =
             Executors.newSingleThreadScheduledExecutor();
 
@@ -91,7 +167,9 @@ public class MySystemService extends Service {
             init_pressure = intent.getIntExtra("initial_pressure", 0);
         }
         pids[0] = android.os.Process.myPid();
+
         try {
+
             List<AndroidAppProcess> processes = AndroidProcesses.getRunningAppProcesses();
            final ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
 
@@ -117,6 +195,24 @@ public class MySystemService extends Service {
 //                PackageInfo packageInfo = process.getPackageInfo(context, 0);
 //                String appName = packageInfo.applicationInfo.loadLabel(pm).toString();
             }
+//            List<ActivityManager.RunningAppProcessInfo> actprocivityes = ((ActivityManager)activityManager).getR();
+//
+//            for (int iCnt = 0; iCnt < activityes.size(); iCnt++){
+//
+//                System.out.println("APP: "+iCnt +" "+ activityes.get(iCnt).processName);
+//
+//                if (activityes.get(iCnt).processName.contains(processName)){
+////                    android.os.Process.sendSignal(activityes.get(iCnt).pid, android.os.Process.SIGNAL_KILL);
+////                    android.os.Process.killProcess(activityes.get(i).pid);
+//                    pids[1]=activityes.get(iCnt).pid;
+//                    //manager.killBackgroundProcesses("com.android.email");
+//
+//                    //manager.restartPackage("com.android.email");
+//
+//                    System.out.println("Inside if");
+//                }
+//
+//            }
 //            final ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
 //            String currentApp = "NULL";
 ////            if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -141,11 +237,12 @@ public class MySystemService extends Service {
                // }
            // }
             first_run=true;
-            if (pids[1] != 0) {
+            if (processName==null || pids[1] != 0) {
                 instance = this;
-                SaveText(fileName+".csv", "pressure_pss(MB)"+ "," + processName + "_pss(MB)," + "Active_Memory(MB)"+ "," + "Cached_Memory(MB)" + "," + "Free_Memory(MB)"+ "\n");
+                SaveText(fileName+".csv", "time,"+"pressure_pss(MB)"+ "," + processName + "_pss(MB)," + "Active_Memory(MB)"+ "," + "Cached_Memory(MB)" + "," + "Free_Memory(MB)"+ "\n");
                 scheduler.scheduleAtFixedRate
                         (new Runnable() {
+                            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
                             public void run() {
                                 // call service
                                 Log.i(TAG, "Calling JNI");
@@ -170,7 +267,18 @@ public class MySystemService extends Service {
                                     osw.write("echo -17 > /proc/" + pids[0] + "/oom_adj");
                                     osw.close();
                                     InputStream is = proc.getInputStream();
-                                    Map<String, Integer> memMap = getStringFromInputStream(is, false);
+                                    Map<String, Integer> memMap = getStringFromInputStream(is, 2);
+                                    ActivityManager.RunningAppProcessInfo rapI=new ActivityManager.RunningAppProcessInfo();
+                                    activityManager.getMyMemoryState(rapI);
+                                    memoryStat(rapI.lastTrimLevel);
+                                    ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+                                    activityManager.getMemoryInfo(memoryInfo);
+                                    Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => Memory in use : "+memoryInfo.availMem);
+                                    if(memoryInfo.lowMemory) {
+                                        Log.e(TAG, "low memory and threshold:" + memoryInfo.threshold);
+                                        SaveText(fileName+".csv", "Critical Pressure, , , , \n");
+
+                                    }
                                     //InputStream is1 = proc1.getInputStream();
 //                                    Map<String, Integer> cpuMap = getStringFromInputStream(is1, true);
 //                                    int utime = cpuMap.get("utime");
@@ -201,8 +309,10 @@ public class MySystemService extends Service {
                                     list.add(memMap.get("Cached:") / 1024);
                                     list.add(memMap.get("MemFree:") / 1024);
                                     list.add(memMap.get("MemTotal:") / 1024);
-                                    Log.i(TAG, String.format("** Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", list.get(0),list.get(1),list.get(2),list.get(3),list.get(4)));
-                                    SaveText(fileName+".csv", list.get(0)+ "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "\n");
+                                    Date date=new Date();
+                                    DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+                                    Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n",dateFormat.format(date), list.get(0),list.get(1),list.get(2),list.get(3),list.get(4)));
+                                    SaveText(fileName+".csv", dateFormat.format(date)+","+list.get(0)+ "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "\n");
 
                                     //  activity.updateClient(list);
                                 } catch (IOException e) {
@@ -212,24 +322,20 @@ public class MySystemService extends Service {
 
                             }
                         }, 0, duration, TimeUnit.MILLISECONDS);
-                //  timer.scheduleAtFixedRate(new TimerTask() {
-                //   public void run() {
-
+//                  timer.scheduleAtFixedRate(new TimerTask() {
+//                   public void run() {
+//
 //                    Date date=new Date();
 //                    DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-//                    try {
-//                        Log.i(TAG, String.format("** Time: %d => PSS: %d **\n",date.getTime(), memoryInfoArray[0].getTotalPss()));
-//                        myOutWriter.append(dateFormat.format(date)+","+memoryInfoArray[0].getTotalPss() + "\n");
-//
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
+//                    android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
+//                        Log.i(TAG, String.format("** Time: %s => PSS: %.3f **\n",dateFormat.format(date), ((double)memoryInfoArray[1].getTotalPss()/1024)));
+//                         SaveText(fileName+".csv", dateFormat.format(date)+","+memoryInfoArray[1].getTotalPss()+ "\n");
 //                    }
-                //    }
-
-                //  }, delay, period);
+//
+//                  }, 0, 10);
             } else {
-                Toast.makeText(getApplicationContext(), "Process name : "+processName+" is not running", Toast.LENGTH_SHORT).show();
-                onDestroy();
+            Toast.makeText(getApplicationContext(), "Process name : "+processName+" is not running", Toast.LENGTH_SHORT).show();
+            onDestroy();
 
             }
         }catch(Exception e)
@@ -274,7 +380,7 @@ public class MySystemService extends Service {
             e.printStackTrace();
             Log.d(TAG,e.getMessage());
         }}
-    private static Map<String,Integer> getStringFromInputStream(InputStream is,boolean oneLine) {
+    private static Map<String,Integer> getStringFromInputStream(InputStream is,int oneLine) {
         StringBuilder sb = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String line = null;
@@ -283,14 +389,18 @@ public class MySystemService extends Service {
         try {
             while((line = br.readLine()) != null) {
                 String[] strs = line.split(" ");
-                if(oneLine)
+                if(oneLine == 0)
+                {
+                    Map.put("pid", Integer.parseInt(strs[1]));
+                }
+                else if(oneLine==1)
                 {
                     Map.put("utime", Integer.parseInt(strs[13]));
                     Map.put("stime", Integer.parseInt(strs[14]));
                     Map.put("cutime", Integer.parseInt(strs[15]));
                     Map.put("cstime", Integer.parseInt(strs[16]));
                     Map.put("starttime", Integer.parseInt(strs[21]));
-                }else {
+                }else if(oneLine ==2 ){
                     Map.put(strs[0], Integer.parseInt(strs[strs.length - 2]));
                 }
                 sb.append(line);

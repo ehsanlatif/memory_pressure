@@ -68,12 +68,23 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 //    {
 
     //for(int i=0;i<10;i++) {
-    if (!repeat)
-        s.clear();
+    if (repeat || s.size()==0) {
 
-    string sstr(size, ' ');
-    s.push_back(sstr);
-    int hertz=sysconf(_SC_CLK_TCK);
+        while (size >= 52428800) {
+            string sstr(52428800, ' ');
+            s.push_back(sstr);
+            size -= 52428800;
+        }
+        if (size < 52428800) {
+            string sstr(size, ' ');
+            s.push_back(sstr);
+
+        }
+    } else
+        __android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "Self_PSS: %d",s.size());
+
+
+        int hertz=sysconf(_SC_CLK_TCK);
 //            int tSize = 0, resident = 0, share = 0;
 //            int tSize1 = 0, resident1 = 0, share1 = 0;
 //            ifstream buffer("/proc/self/statm");

@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
             String output_file=extras.getString("output");
             serviceIntent.putExtra("filename", output_file);
             serviceIntent.putExtra("duration", per);
-            serviceIntent.putExtra("repeat", true);
+            serviceIntent.putExtra("repeat", per==0?false:true);
             serviceIntent.putExtra("process", proc);
             serviceIntent.putExtra("pressure", pres);
             serviceIntent.putExtra("initial_pressure", init_pers);
@@ -112,8 +112,10 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
                                 serviceIntent.putExtra("repeat", repeat);
                                 serviceIntent.putExtra("process", process_name.getText().toString());
                                 serviceIntent.putExtra("pressure", Integer.parseInt(pressure.getText().toString()));
+                                serviceIntent.putExtra("initial_pressure", Integer.parseInt(pressure.getText().toString()));
 
-                              //  startService(serviceIntent); //Starting the service
+
+                                //  startService(serviceIntent); //Starting the service
                                 bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
                                 //textView.setText("Service is Running!");
                                 button.setText("Stop");
