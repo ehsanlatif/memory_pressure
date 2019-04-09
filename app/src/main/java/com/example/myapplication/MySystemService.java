@@ -71,17 +71,17 @@ public class MySystemService extends Service {
                 Log.d(TAG, "on Moderat Pressure");
                 SaveText(fileName+".csv", "Moderat Pressure, , , , \n");
             }
-                break;
+            break;
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW: {
                 Log.d(TAG, "on High Pressure");
                 SaveText(fileName+".csv", "High Pressure, , , , \n");
             }
-                break;
+            break;
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL:{
                 Log.d(TAG,"on Critical Pressure");
                 SaveText(fileName+".csv", "Critical Pressure, , , , \n");
             }
-                break;
+            break;
 
                 /*
                    Release any memory that your app doesn't need to run.
@@ -125,7 +125,7 @@ public class MySystemService extends Service {
                 break;
         }
     }
-    public native int PassSizeToNative(int a,boolean b);
+    public native int PassSizeToNative(String proc_name,int a,boolean b);
 
     private static MySystemService instance = null;
     private final IBinder mBinder = new LocalBinder();
@@ -138,7 +138,7 @@ public class MySystemService extends Service {
     Callbacks activity;
 
 
-     Timer timer = new Timer();
+    Timer timer = new Timer();
     ScheduledExecutorService scheduler =
             Executors.newSingleThreadScheduledExecutor();
 
@@ -155,6 +155,7 @@ public class MySystemService extends Service {
     int []pids={0,0};
     double last_seconds=-1;
     boolean first_run=false;
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public IBinder onBind(Intent intent) {
         Toast.makeText(getApplicationContext(),"Service Started",Toast.LENGTH_SHORT).show();
@@ -169,20 +170,24 @@ public class MySystemService extends Service {
         pids[0] = android.os.Process.myPid();
 
         try {
+           // pids[1]=PassSizeToNative("com.google.android.gm.lite",-1,repeat);
+
 
             List<AndroidAppProcess> processes = AndroidProcesses.getRunningAppProcesses();
-           final ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
+            final ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
+            if(activityManager.isLowRamDevice())
+                Toast.makeText(getApplicationContext(),"Is LowDevice",Toast.LENGTH_LONG).show();
 
             for (AndroidAppProcess process : processes) {
                 // Get some information about the process
-//                String processName = process.name;
+                String processName = process.name;
 //
 //                Stat stat = process.stat();
-                //int pid = stat.getPid();
+               // int pid = stat.getPid();
                 if (process.name.equals(processName)) {
-                            pids[1] = process.stat().getPid();
-                            break;
-                        }
+                    pids[1] = process.stat().getPid();
+                    break;
+                }
 //                int parentProcessId = stat.ppid();
 //                long startTime = stat.stime();
 //                int policy = stat.policy();
@@ -194,7 +199,7 @@ public class MySystemService extends Service {
 //
 //                PackageInfo packageInfo = process.getPackageInfo(context, 0);
 //                String appName = packageInfo.applicationInfo.loadLabel(pm).toString();
-            }
+//            }
 //            List<ActivityManager.RunningAppProcessInfo> actprocivityes = ((ActivityManager)activityManager).getR();
 //
 //            for (int iCnt = 0; iCnt < activityes.size(); iCnt++){
@@ -212,7 +217,14 @@ public class MySystemService extends Service {
 //                    System.out.println("Inside if");
 //                }
 //
-//            }
+            }
+            if(pids[1]==0) {
+                String[] cmd = {"su", "-c", "pidof " + processName};
+                Process proc2 = Runtime.getRuntime().exec(cmd);
+                InputStream upis = proc2.getInputStream();
+                BufferedReader br = new BufferedReader(new InputStreamReader(upis));
+                pids[1] = Integer.parseInt(br.readLine().toString());
+            }
 //            final ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
 //            String currentApp = "NULL";
 ////            if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -234,8 +246,8 @@ public class MySystemService extends Service {
 //                            pids[1] = activityes.get(iCnt).pid;
 //                        }
 //                    }
-               // }
-           // }
+            // }
+            // }
             first_run=true;
             if (processName==null || pids[1] != 0) {
                 instance = this;
@@ -248,9 +260,9 @@ public class MySystemService extends Service {
                                 Log.i(TAG, "Calling JNI");
 
                                 if(first_run)
-                                PassSizeToNative(init_pressure * 1024 * 1024,repeat);
+                                    PassSizeToNative("",init_pressure * 1024 * 1024,repeat);
                                 else
-                                PassSizeToNative(pressure * 1024 * 1024,repeat);
+                                    PassSizeToNative("",pressure * 1024 * 1024,repeat);
                                 first_run=false;
 
                                 android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
@@ -334,8 +346,8 @@ public class MySystemService extends Service {
 //
 //                  }, 0, 10);
             } else {
-            Toast.makeText(getApplicationContext(), "Process name : "+processName+" is not running", Toast.LENGTH_SHORT).show();
-            onDestroy();
+                Toast.makeText(getApplicationContext(), "Process name : "+processName+" is not running", Toast.LENGTH_SHORT).show();
+                onDestroy();
 
             }
         }catch(Exception e)
@@ -428,7 +440,7 @@ public class MySystemService extends Service {
         // timer.purge();
         // timer.cancel();
         scheduler.shutdown();
-        PassSizeToNative(0,false);
+        //PassSizeToNative(0,false);
 //        try {
 //
 //            myOutWriter.close();
