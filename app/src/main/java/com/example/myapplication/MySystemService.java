@@ -285,7 +285,7 @@ public class MySystemService extends Service {
                                     memoryStat(rapI.lastTrimLevel);
                                     ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
                                     activityManager.getMemoryInfo(memoryInfo);
-                                    Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => Memory in use : "+memoryInfo.availMem);
+                                    Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => Memory in use : "+((memoryInfo.totalMem-memoryInfo.availMem)*100/memoryInfo.totalMem)+"%");
                                     if(memoryInfo.lowMemory) {
                                         Log.e(TAG, "low memory and threshold:" + memoryInfo.threshold);
                                         SaveText(fileName+".csv", "Critical Pressure, , , , \n");
