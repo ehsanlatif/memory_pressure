@@ -51,8 +51,8 @@ public class MySystemService extends Service {
     static {
         System.loadLibrary("native-lib");
     }
-    @Override
-    public void onTrimMemory(int level) {
+
+    public void memoryStat(int level) {
    //     super.onTrimMemory(level);
   //  }
   //  public void memoryStat(int level) {
@@ -290,7 +290,7 @@ public class MySystemService extends Service {
                                     Map<String, Integer> memMap = getStringFromInputStream(is, 2);
                                     ActivityManager.RunningAppProcessInfo rapI=new ActivityManager.RunningAppProcessInfo();
                                     ActivityManager.getMyMemoryState(rapI);
-                                  //  memoryStat(rapI.lastTrimLevel);
+                                    memoryStat(rapI.lastTrimLevel);
                                     ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
                                     activityManager.getMemoryInfo(memoryInfo);
                                     if(memoryInfo.lowMemory) {
