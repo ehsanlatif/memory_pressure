@@ -17,7 +17,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.RadioGroup;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,9 +34,10 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
     TextInputLayout period_layout;
     TextInputEditText pressure,process_name,period,output;
     RadioGroup radioGroup;
-    TextView total_memory,process_pressure,total_pressure,process_pss,free_memory;
+    TextView total_memory,process_pressure,total_pressure,process_pss,free_memory,repeat;
     Intent serviceIntent;
     MySystemService myService;
+    Switch aSwitch;
      Button button;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,11 +81,28 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
         period=findViewById(R.id.period);
         output=findViewById(R.id.out_directory);
         radioGroup=findViewById(R.id.group);
-//        total_memory=findViewById(R.id.total_memory);
+        aSwitch=findViewById(R.id.switch1);
+        repeat=findViewById(R.id.textView4);
 //        process_pressure=findViewById(R.id.process_pressure);
 //        total_pressure=findViewById(R.id.total_pressure);
 //        process_pss=findViewById(R.id.process_pss);
 //        free_memory=findViewById(R.id.free_memory);
+        aSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked) {
+                    radioGroup.setVisibility(View.GONE);
+                    repeat.setVisibility(View.GONE);
+                    aSwitch.setText("%");
+                }
+                else {
+                    radioGroup.setVisibility(View.VISIBLE);
+                    repeat.setVisibility(View.VISIBLE);
+                    aSwitch.setText("MB");
+
+                }
+            }
+        });
 
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -108,24 +128,37 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
 
                     if(!MySystemService.isInstanceCreated()) {
                         if(!(output.getText().toString().isEmpty() || process_name.getText().toString().isEmpty() || pressure.getText().toString().isEmpty())) {
-                            boolean repeat = radioGroup.getCheckedRadioButtonId() == R.id.repeat_yes;
-                            if(!(repeat  && period.getText().toString().isEmpty())) {
+                            if(aSwitch.isChecked()){
                                 serviceIntent.putExtra("filename", output.getText().toString());
-                                serviceIntent.putExtra("duration", repeat ? Integer.parseInt(period.getText().toString()) : 1000);
-                                serviceIntent.putExtra("repeat", repeat);
                                 serviceIntent.putExtra("process", process_name.getText().toString());
                                 serviceIntent.putExtra("pressure", Integer.parseInt(pressure.getText().toString()));
-                                serviceIntent.putExtra("initial_pressure", Integer.parseInt(pressure.getText().toString()));
-
-
-                                //  startService(serviceIntent); //Starting the service
+                                serviceIntent.putExtra("repeat", false);
+                                serviceIntent.putExtra("duration",  10);
+                                serviceIntent.putExtra("initial_pressure", 10);
                                 bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
                                 //textView.setText("Service is Running!");
                                 button.setText("Stop");
-                                started=true;
+                                started = true;
+
+                            }else {
+                                boolean repeat = radioGroup.getCheckedRadioButtonId() == R.id.repeat_yes;
+                                if (!(repeat && period.getText().toString().isEmpty())) {
+                                    serviceIntent.putExtra("filename", output.getText().toString());
+                                    serviceIntent.putExtra("duration", repeat ? Integer.parseInt(period.getText().toString()) : 1000);
+                                    serviceIntent.putExtra("repeat", repeat);
+                                    serviceIntent.putExtra("process", process_name.getText().toString());
+                                    serviceIntent.putExtra("pressure", Integer.parseInt(pressure.getText().toString()));
+                                    serviceIntent.putExtra("initial_pressure", Integer.parseInt(pressure.getText().toString()));
+
+
+                                    //  startService(serviceIntent); //Starting the service
+                                    bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
+                                    //textView.setText("Service is Running!");
+                                    button.setText("Stop");
+                                    started = true;
+                                } else
+                                    Toast.makeText(getApplicationContext(), "Enter repetition period in ms", Toast.LENGTH_SHORT).show();
                             }
-                            else
-                                Toast.makeText(getApplicationContext(),"Enter repetition period in ms",Toast.LENGTH_SHORT).show();
                         }else
                             Toast.makeText(getApplicationContext(),"Fill all required Fields",Toast.LENGTH_SHORT).show();
                     }

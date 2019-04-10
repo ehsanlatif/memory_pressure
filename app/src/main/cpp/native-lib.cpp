@@ -15,7 +15,6 @@ extern "C" JNIEXPORT jint JNICALL
 Java_com_example_myapplication_MySystemService_PassSizeToNative(
         JNIEnv* env,
         jobject instance,
-        jstring proc_name,
         jint size,
         jboolean repeat) {
     // std::string hello = "Hello from C++";
@@ -24,48 +23,48 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 
 //    int ArraySize=size;
 //
-    int id;
-    pid_t pid = -1;
-    DIR *dir;
-    FILE *fp;
-    char filename[32];
-    char cmdline[256];
-    if(size==-1) {
-        const char *proces_name = env->GetStringUTFChars(proc_name, NULL);
-        // char *process_name="com.google.android.gm";
-
-        struct dirent *entry;
-
-        if (proces_name == NULL)
-            pid = -1;
-
-        dir = opendir("/proc");
-        if (dir == NULL)
-            pid = -1;
-
-        while ((entry = readdir(dir)) != NULL) {
-            id = atoi(entry->d_name);
-            if (id != 0) {
-                if(id==15406)
-                    __android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "found:");
-
-                sprintf(filename, "/proc/%d/cmdline", id);
-                fp = fopen(filename, "r");
-                if (fp) {
-                    fgets(cmdline, sizeof(cmdline), fp);
-                    fclose(fp);
-
-                    if (strcmp(proces_name, cmdline) == 0) {
-                        /* process found */
-                        pid = id;
-                        break;
-                    }
-                }
-            }
-        }
-
-        closedir(dir);
-    }else {
+    int id=0;
+//    pid_t pid = -1;
+//    DIR *dir;
+//    FILE *fp;
+//    char filename[32];
+//    char cmdline[256];
+//    if(size==-1) {
+//        const char *proces_name = env->GetStringUTFChars(proc_name, NULL);
+//        // char *process_name="com.google.android.gm";
+//
+//        struct dirent *entry;
+//
+//        if (proces_name == NULL)
+//            pid = -1;
+//
+//        dir = opendir("/proc");
+//        if (dir == NULL)
+//            pid = -1;
+//
+//        while ((entry = readdir(dir)) != NULL) {
+//            id = atoi(entry->d_name);
+//            if (id != 0) {
+//                if(id==15406)
+//                    __android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "found:");
+//
+//                sprintf(filename, "/proc/%d/cmdline", id);
+//                fp = fopen(filename, "r");
+//                if (fp) {
+//                    fgets(cmdline, sizeof(cmdline), fp);
+//                    fclose(fp);
+//
+//                    if (strcmp(proces_name, cmdline) == 0) {
+//                        /* process found */
+//                        pid = id;
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//
+//        closedir(dir);
+//    }else {
 
 //    FILE* file = fopen("/sdcard/hello.csv","wb");
 //
@@ -119,7 +118,7 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 //        fflush(file);
 //        fclose(file);
         //}
-    }
+//    }
     return id;//env->NewStringUTF(hello.c_str());
 }
 

@@ -51,8 +51,11 @@ public class MySystemService extends Service {
     static {
         System.loadLibrary("native-lib");
     }
-
-    public void memoryStat(int level) {
+    @Override
+    public void onTrimMemory(int level) {
+   //     super.onTrimMemory(level);
+  //  }
+  //  public void memoryStat(int level) {
 
         // Determine which lifecycle or system event was raised.
         switch (level) {
@@ -97,13 +100,17 @@ public class MySystemService extends Service {
                 Log.d(TAG, "on Moderat Pressure");
                 SaveText(fileName+".csv", "Background Pressure, , , , \n");
             }
+            break;
             case ComponentCallbacks2.TRIM_MEMORY_MODERATE:
             {
                 Log.d(TAG, "on Moderat Pressure");
                 SaveText(fileName+".csv", "Moderat Pressure, , , , \n");
             }
+            break;
             case ComponentCallbacks2.TRIM_MEMORY_COMPLETE:
 
+                Log.d(TAG, "LMKD kicked In");
+                SaveText(fileName+".csv", "LMKD kicked In, , , , \n");
                 /*
                    Release as much memory as the process can.
 
@@ -125,7 +132,7 @@ public class MySystemService extends Service {
                 break;
         }
     }
-    public native int PassSizeToNative(String proc_name,int a,boolean b);
+    public native int PassSizeToNative(int a,boolean b);
 
     private static MySystemService instance = null;
     private final IBinder mBinder = new LocalBinder();
@@ -136,6 +143,7 @@ public class MySystemService extends Service {
     int pressure;
     int init_pressure;
     Callbacks activity;
+    private static int initial_Cache;
 
 
     Timer timer = new Timer();
@@ -152,12 +160,15 @@ public class MySystemService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         return Service.START_STICKY;
     }
+
+
+
     int []pids={0,0};
     double last_seconds=-1;
     boolean first_run=false;
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
-    public IBinder onBind(Intent intent) {
+    public IBinder onBind(final Intent intent) {
         Toast.makeText(getApplicationContext(),"Service Started",Toast.LENGTH_SHORT).show();
         if(intent.getExtras()!=null) {
             fileName = intent.getStringExtra("filename");
@@ -259,20 +270,17 @@ public class MySystemService extends Service {
                                 // call service
                                 Log.i(TAG, "Calling JNI");
 
-                                if(first_run)
-                                    PassSizeToNative("",init_pressure * 1024 * 1024,repeat);
-                                else
-                                    PassSizeToNative("",pressure * 1024 * 1024,repeat);
-                                first_run=false;
+
 
                                 android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
                                 try {
                                     Process proc = Runtime.getRuntime().exec("cat /proc/meminfo " + pids[1]);
-//                                    Process proc1 = Runtime.getRuntime().exec("cat /proc/" + 20 + "/stat");
-//                                    Process proc2 = Runtime.getRuntime().exec("cat /proc/uptime");
+                                    //Process proc1 = Runtime.getRuntime().exec("cat /proc/" + 20 + "/stat");
+                                    Process proc2 = Runtime.getRuntime().exec("cat /proc/sys/vm/swappiness");
 //                                    InputStream upis = proc2.getInputStream();
 //                                    BufferedReader br = new BufferedReader(new InputStreamReader(upis));
-//                                    double uptime = Double.parseDouble(br.readLine().split(" ")[0]);
+//                                    int swapiness = Integer.parseInt(br.readLine().toString());
+//                                    Log.i("SWAPPINESS : ",swapiness+"");
 
                                     Process p = Runtime.getRuntime().exec("su");
                                     osw = new OutputStreamWriter(p.getOutputStream());
@@ -281,14 +289,13 @@ public class MySystemService extends Service {
                                     InputStream is = proc.getInputStream();
                                     Map<String, Integer> memMap = getStringFromInputStream(is, 2);
                                     ActivityManager.RunningAppProcessInfo rapI=new ActivityManager.RunningAppProcessInfo();
-                                    activityManager.getMyMemoryState(rapI);
-                                    memoryStat(rapI.lastTrimLevel);
+                                    ActivityManager.getMyMemoryState(rapI);
+                                  //  memoryStat(rapI.lastTrimLevel);
                                     ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
                                     activityManager.getMemoryInfo(memoryInfo);
-                                    Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => Memory in use : "+((memoryInfo.totalMem-memoryInfo.availMem)*100/memoryInfo.totalMem)+"%");
                                     if(memoryInfo.lowMemory) {
                                         Log.e(TAG, "low memory and threshold:" + memoryInfo.threshold);
-                                        SaveText(fileName+".csv", "Critical Pressure, , , , \n");
+                                        SaveText(fileName+".csv", "LMK kicked In, , , , \n");
 
                                     }
                                     //InputStream is1 = proc1.getInputStream();
@@ -321,11 +328,31 @@ public class MySystemService extends Service {
                                     list.add(memMap.get("Cached:") / 1024);
                                     list.add(memMap.get("MemFree:") / 1024);
                                     list.add(memMap.get("MemTotal:") / 1024);
+                                    if(first_run)
+                                        initial_Cache=list.get(3);
+
+                                    if(list.get(3)>initial_Cache)
+                                        initial_Cache=list.get(3);
+                                    double vmPressure=(double)(((initial_Cache-list.get(3))*100)/initial_Cache);
+                                    Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => VM_Pressure: "+vmPressure+"%");
+
+                                    //long used_mem=memoryInfo.totalMem-memoryInfo.availMem;
+                                    //Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => Memory pressure: "+(used_mem*100/memoryInfo.totalMem)+"%");
                                     Date date=new Date();
                                     DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
                                     Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n",dateFormat.format(date), list.get(0),list.get(1),list.get(2),list.get(3),list.get(4)));
                                     SaveText(fileName+".csv", dateFormat.format(date)+","+list.get(0)+ "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "\n");
+                                    if(first_run)
+                                        PassSizeToNative(init_pressure * 1024 * 1024,true);
+                                    else {
+                                        if(repeat==false && duration == 10) {
+                                            PassSizeToNative(init_pressure * 1024 * 1024, vmPressure<=pressure);
+                                        }
+                                        else
+                                            PassSizeToNative(pressure * 1024 * 1024, repeat);
 
+                                    }
+                                    first_run=false;
                                     //  activity.updateClient(list);
                                 } catch (IOException e) {
                                     e.printStackTrace();
