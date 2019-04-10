@@ -52,7 +52,7 @@ public class MySystemService extends Service {
         System.loadLibrary("native-lib");
     }
 
-    public void memoryStat(int level) {
+    public String memoryStat(int level) {
    //     super.onTrimMemory(level);
   //  }
   //  public void memoryStat(int level) {
@@ -62,29 +62,20 @@ public class MySystemService extends Service {
 
             case ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN:
 
-                /*
-                   Release any UI objects that currently hold memory.
-
-                   The user interface has moved to the background.
-                */
-
-                break;
-
+                return "";
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE: {
                 Log.d(TAG, "on Moderat Pressure");
-                SaveText(fileName+".csv", "Moderat Pressure, , , , \n");
+               return "Moderat";
             }
-            break;
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW: {
                 Log.d(TAG, "on High Pressure");
-                SaveText(fileName+".csv", "High Pressure, , , , \n");
+               return "High";
             }
-            break;
+
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL:{
                 Log.d(TAG,"on Critical Pressure");
-                SaveText(fileName+".csv", "Critical Pressure, , , , \n");
+               return "Critical";
             }
-            break;
 
                 /*
                    Release any memory that your app doesn't need to run.
@@ -97,20 +88,19 @@ public class MySystemService extends Service {
 
             case ComponentCallbacks2.TRIM_MEMORY_BACKGROUND:
             {
-                Log.d(TAG, "on Moderat Pressure");
-                SaveText(fileName+".csv", "Background Pressure, , , , \n");
+                //Log.d(TAG, "on Moderat Pressure");
+               return"Same";
             }
-            break;
+
             case ComponentCallbacks2.TRIM_MEMORY_MODERATE:
             {
                 Log.d(TAG, "on Moderat Pressure");
-                SaveText(fileName+".csv", "Moderat Pressure, , , , \n");
+               return"Moderat";
             }
-            break;
             case ComponentCallbacks2.TRIM_MEMORY_COMPLETE:
 
                 Log.d(TAG, "LMKD kicked In");
-                SaveText(fileName+".csv", "LMKD kicked In, , , , \n");
+               return"LMKD kicked In";
                 /*
                    Release as much memory as the process can.
 
@@ -120,16 +110,15 @@ public class MySystemService extends Service {
                    the first to be terminated.
                 */
 
-                break;
 
             default:
+                return "same";
                 /*
                   Release any non-critical data structures.
 
                   The app received an unrecognized memory level value
                   from the system. Treat this as a generic low-memory message.
                 */
-                break;
         }
     }
     public native int PassSizeToNative(int a,boolean b);
@@ -262,7 +251,7 @@ public class MySystemService extends Service {
             first_run=true;
             if (processName==null || pids[1] != 0) {
                 instance = this;
-                SaveText(fileName+".csv", "time,"+"pressure_pss(MB)"+ "," + processName + "_pss(MB)," + "Active_Memory(MB)"+ "," + "Cached_Memory(MB)" + "," + "Free_Memory(MB)"+ "\n");
+                SaveText(fileName+".csv", "time,"+"pressure_pss(MB)"+ "," + processName + "_pss(MB)," + "Active_Memory(MB)"+ "," + "Cached_Memory(MB)" + "," + "Free_Memory(MB)"+","+"State"+ ","+"VM_Pressure"+"\n");
                 scheduler.scheduleAtFixedRate
                         (new Runnable() {
                             @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
@@ -290,12 +279,11 @@ public class MySystemService extends Service {
                                     Map<String, Integer> memMap = getStringFromInputStream(is, 2);
                                     ActivityManager.RunningAppProcessInfo rapI=new ActivityManager.RunningAppProcessInfo();
                                     ActivityManager.getMyMemoryState(rapI);
-                                    memoryStat(rapI.lastTrimLevel);
+                                    String state=memoryStat(rapI.lastTrimLevel);
                                     ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
                                     activityManager.getMemoryInfo(memoryInfo);
                                     if(memoryInfo.lowMemory) {
                                         Log.e(TAG, "low memory and threshold:" + memoryInfo.threshold);
-                                        SaveText(fileName+".csv", "LMK kicked In, , , , \n");
 
                                     }
                                     //InputStream is1 = proc1.getInputStream();
@@ -342,7 +330,7 @@ public class MySystemService extends Service {
                                     Date date=new Date();
                                     DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
                                     Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n",dateFormat.format(date), list.get(0),list.get(1),list.get(2),list.get(3),list.get(4)));
-                                    SaveText(fileName+".csv", dateFormat.format(date)+","+list.get(0)+ "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "\n");
+                                    SaveText(fileName+".csv", dateFormat.format(date)+","+list.get(0)+ "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) +","+state+","+vmPressure+"\n");
                                     if(first_run) {
                                         if (init_pressure==-1)
                                             init_pressure = pressure * initial_Cache / 100;
