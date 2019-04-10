@@ -329,12 +329,13 @@ public class MySystemService extends Service {
                                     list.add(memMap.get("MemFree:") / 1024);
                                     list.add(memMap.get("MemTotal:") / 1024);
                                     if(first_run)
-                                        initial_Cache=list.get(3);
+                                        initial_Cache=list.get(3)+list.get(4);
 
-                                    if(list.get(3)>initial_Cache)
-                                        initial_Cache=list.get(3);
-                                    double vmPressure=(double)(((initial_Cache-list.get(3))*100)/initial_Cache);
+                                    if((list.get(3)+list.get(4))>initial_Cache)
+                                        initial_Cache=list.get(3)+list.get(4);
+                                    double vmPressure=(double)(((initial_Cache-(list.get(3)+list.get(4)))*100)/initial_Cache);
                                     Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => VM_Pressure: "+vmPressure+"%");
+
 
                                     //long used_mem=memoryInfo.totalMem-memoryInfo.availMem;
                                     //Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => Memory pressure: "+(used_mem*100/memoryInfo.totalMem)+"%");
@@ -342,15 +343,13 @@ public class MySystemService extends Service {
                                     DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
                                     Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n",dateFormat.format(date), list.get(0),list.get(1),list.get(2),list.get(3),list.get(4)));
                                     SaveText(fileName+".csv", dateFormat.format(date)+","+list.get(0)+ "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "\n");
-                                    if(first_run)
-                                        PassSizeToNative(init_pressure * 1024 * 1024,true);
+                                    if(first_run) {
+                                        if (init_pressure==-1)
+                                            init_pressure = pressure * initial_Cache / 100;
+                                        PassSizeToNative(init_pressure * 1024 * 1024, repeat);
+                                    }
                                     else {
-                                        if(repeat==false && duration == 10) {
-                                            PassSizeToNative(init_pressure * 1024 * 1024, vmPressure<=pressure);
-                                        }
-                                        else
                                             PassSizeToNative(pressure * 1024 * 1024, repeat);
-
                                     }
                                     first_run=false;
                                     //  activity.updateClient(list);
