@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
         serviceIntent = new Intent(MainActivity.this, MySystemService.class);
         Bundle extras=getIntent().getExtras();
 
-        if(extras!=null)
+        if(extras!=null && extras.getInt("pressure",0)!=0)
         {
             Toast.makeText(getApplicationContext(),extras.toString(),Toast.LENGTH_LONG).show();
             int pres=extras.getInt("pressure",0);

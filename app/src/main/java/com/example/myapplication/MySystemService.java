@@ -271,10 +271,13 @@ public class MySystemService extends Service {
 //                                    int swapiness = Integer.parseInt(br.readLine().toString());
 //                                    Log.i("SWAPPINESS : ",swapiness+"");
 
-                                    Process p = Runtime.getRuntime().exec("su");
-                                    osw = new OutputStreamWriter(p.getOutputStream());
-                                    osw.write("echo -17 > /proc/" + pids[0] + "/oom_adj");
-                                    osw.close();
+                                    String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+                                    Process p = Runtime.getRuntime().exec(cmd);
+//                                    osw = new OutputStreamWriter(p.getOutputStream());
+//                                    osw.write("echo -17 > /proc/" + pids[0] + "/oom_adj");
+//                                    osw.close();
+
+//                                    Runtime.getRuntime().exec("echo -17 > /proc/" + pids[0] + "/oom_adj");
                                     InputStream is = proc.getInputStream();
                                     Map<String, Integer> memMap = getStringFromInputStream(is, 2);
                                     ActivityManager.RunningAppProcessInfo rapI=new ActivityManager.RunningAppProcessInfo();
