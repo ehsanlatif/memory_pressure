@@ -74,17 +74,31 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
         //for(int i=0;i<10;i++) {
         if (repeat || s.size() == 0) {
 
-            while (size >= 52428800) {
-                string sstr(52428800, ' ');
+            while (size >= 5242880) {
+              //  if (size >= 104857600) {
+                string sstr(5242880, ' ');
                 s.push_back(sstr);
-                size -= 52428800;
+                size -= 5242880;
+//            }else if(size < 104857600){
+//                    //if(size >= 52428800) {
+//                        string sstr(1048576, ' ');
+//                        s.push_back(sstr);
+//                        size -= 1048576;
+////                    } else{
+////                        string sstr(524288, ' ');
+////                        s.push_back(sstr);
+////                        size -= 524288;
+////                    }
+//            }
             }
-            if (size < 52428800) {
+            if (size < 5242880) {
                 string sstr(size, ' ');
                 s.push_back(sstr);
 
             }
-        } else
+        } else if(repeat ==false && size ==0){
+            s.clear();
+        }
             __android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "Self_PSS: %d", s.size());
 
 

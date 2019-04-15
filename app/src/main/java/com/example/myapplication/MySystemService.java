@@ -53,9 +53,9 @@ public class MySystemService extends Service {
     }
 
     public String memoryStat(int level) {
-   //     super.onTrimMemory(level);
-  //  }
-  //  public void memoryStat(int level) {
+        //     super.onTrimMemory(level);
+        //  }
+        //  public void memoryStat(int level) {
 
         // Determine which lifecycle or system event was raised.
         switch (level) {
@@ -65,16 +65,16 @@ public class MySystemService extends Service {
                 return "";
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE: {
                 Log.d(TAG, "on Moderat Pressure");
-               return "Moderat";
+                return "Moderat";
             }
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW: {
                 Log.d(TAG, "on High Pressure");
-               return "High";
+                return "High";
             }
 
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL:{
                 Log.d(TAG,"on Critical Pressure");
-               return "Critical";
+                return "Critical";
             }
 
                 /*
@@ -89,18 +89,18 @@ public class MySystemService extends Service {
             case ComponentCallbacks2.TRIM_MEMORY_BACKGROUND:
             {
                 //Log.d(TAG, "on Moderat Pressure");
-               return"Same";
+                return"Same";
             }
 
             case ComponentCallbacks2.TRIM_MEMORY_MODERATE:
             {
                 Log.d(TAG, "on Moderat Pressure");
-               return"Moderat";
+                return"Moderat";
             }
             case ComponentCallbacks2.TRIM_MEMORY_COMPLETE:
 
                 Log.d(TAG, "LMKD kicked In");
-               return"LMKD kicked In";
+                return"LMKD kicked In";
                 /*
                    Release as much memory as the process can.
 
@@ -170,7 +170,7 @@ public class MySystemService extends Service {
         pids[0] = android.os.Process.myPid();
 
         try {
-           // pids[1]=PassSizeToNative("com.google.android.gm.lite",-1,repeat);
+            // pids[1]=PassSizeToNative("com.google.android.gm.lite",-1,repeat);
 
 
             List<AndroidAppProcess> processes = AndroidProcesses.getRunningAppProcesses();
@@ -183,7 +183,7 @@ public class MySystemService extends Service {
                 String processName = process.name;
 //
 //                Stat stat = process.stat();
-               // int pid = stat.getPid();
+                // int pid = stat.getPid();
                 if (process.name.equals(processName)) {
                     pids[1] = process.stat().getPid();
                     break;
@@ -251,106 +251,76 @@ public class MySystemService extends Service {
             first_run=true;
             if (processName==null || pids[1] != 0) {
                 instance = this;
-                SaveText(fileName+".csv", "time,"+"pressure_pss(MB)"+ "," + processName + "_pss(MB)," + "Active_Memory(MB)"+ "," + "Cached_Memory(MB)" + "," + "Free_Memory(MB)"+","+"State"+ ","+"VM_Pressure"+"\n");
-                scheduler.scheduleAtFixedRate
-                        (new Runnable() {
-                            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-                            public void run() {
-                                // call service
-                                Log.i(TAG, "Calling JNI");
+                SaveText(fileName+".csv", "time,"+"pressure_pss(MB)"+ "," + processName + "_pss(MB)," + "Active_Memory(MB)"+ "," + "Cached_Memory(MB)" + "," + "Free_Memory(MB)"+","+"VM_Pressure"+"\n");
+                if(repeat==true) {
+                    scheduler.scheduleAtFixedRate
+                            (new Runnable() {
+                                @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+                                public void run() {
+                                    // call service
+                                    Log.i(TAG, "Calling JNI");
 
 
+                                    android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
 
-                                android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
-                                try {
-                                    Process proc = Runtime.getRuntime().exec("cat /proc/meminfo " + pids[1]);
-                                    //Process proc1 = Runtime.getRuntime().exec("cat /proc/" + 20 + "/stat");
-                                    Process proc2 = Runtime.getRuntime().exec("cat /proc/sys/vm/swappiness");
-//                                    InputStream upis = proc2.getInputStream();
-//                                    BufferedReader br = new BufferedReader(new InputStreamReader(upis));
-//                                    int swapiness = Integer.parseInt(br.readLine().toString());
-//                                    Log.i("SWAPPINESS : ",swapiness+"");
+                                    List<Integer> list = findMemoryStats(activityManager);
 
-                                    String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
-                                    Process p = Runtime.getRuntime().exec(cmd);
-//                                    osw = new OutputStreamWriter(p.getOutputStream());
-//                                    osw.write("echo -17 > /proc/" + pids[0] + "/oom_adj");
-//                                    osw.close();
+                                    if (first_run)
+                                        initial_Cache = list.get(3) + list.get(4);
 
-//                                    Runtime.getRuntime().exec("echo -17 > /proc/" + pids[0] + "/oom_adj");
-                                    InputStream is = proc.getInputStream();
-                                    Map<String, Integer> memMap = getStringFromInputStream(is, 2);
-                                    ActivityManager.RunningAppProcessInfo rapI=new ActivityManager.RunningAppProcessInfo();
-                                    ActivityManager.getMyMemoryState(rapI);
-                                    String state=memoryStat(rapI.lastTrimLevel);
-                                    ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
-                                    activityManager.getMemoryInfo(memoryInfo);
-                                    if(memoryInfo.lowMemory) {
-                                        Log.e(TAG, "low memory and threshold:" + memoryInfo.threshold);
-
-                                    }
-                                    //InputStream is1 = proc1.getInputStream();
-//                                    Map<String, Integer> cpuMap = getStringFromInputStream(is1, true);
-//                                    int utime = cpuMap.get("utime");
-//                                    int stime = cpuMap.get("stime");
-//                                    int cutime = cpuMap.get("cutime");
-//                                    int cstime = cpuMap.get("cstime");
-//                                    int starttime = cpuMap.get("starttime");
-//                                    int total_time = utime + stime;
-//                                    //int Hertz=0;
-//                                    total_time = total_time + cutime + cstime;
-                                    //double seconds = uptime - (starttime / Hertz);
-//                                    double cpu_usage;
-//                                    if (last_seconds == -1){
-//                                        cpu_usage = total_time;
-//                                        last_seconds = total_time;
-//                                    }
-//                                    else
-//                                    {
-//                                        cpu_usage=total_time-last_seconds;//total_time / Hertz;// 100 * ((total_time / Hertz) / seconds);
-//                                        last_seconds=total_time;
-//
-//                                    }
-
-                                    List<Integer> list=new ArrayList<>();
-                                    list.add(memoryInfoArray[0].getTotalPss() / 1024);
-                                    list.add(memoryInfoArray[1].getTotalPss() / 1024);
-                                    list.add(memMap.get("Active:") / 1024);
-                                    list.add(memMap.get("Cached:") / 1024);
-                                    list.add(memMap.get("MemFree:") / 1024);
-                                    list.add(memMap.get("MemTotal:") / 1024);
-                                    if(first_run)
-                                        initial_Cache=list.get(3)+list.get(4);
-
-                                    if((list.get(3)+list.get(4))>initial_Cache)
-                                        initial_Cache=list.get(3)+list.get(4);
-                                    double vmPressure=(double)(((initial_Cache-(list.get(3)+list.get(4)))*100)/initial_Cache);
-                                    Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => VM_Pressure: "+vmPressure+"%");
+                                    if ((list.get(3) + list.get(4)) > initial_Cache)
+                                        initial_Cache = list.get(3) + list.get(4);
+                                    double vmPressure = (double) (((initial_Cache - (list.get(3) + list.get(4))) * 100) / initial_Cache);
+                                    Log.w(TAG, "VM_Pressure: " + vmPressure + "%");
 
 
-                                    //long used_mem=memoryInfo.totalMem-memoryInfo.availMem;
-                                    //Log.w(TAG,"Total Memory: "+ memoryInfo.totalMem+" => Memory pressure: "+(used_mem*100/memoryInfo.totalMem)+"%");
-                                    Date date=new Date();
+                                    Date date = new Date();
                                     DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-                                    Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n",dateFormat.format(date), list.get(0),list.get(1),list.get(2),list.get(3),list.get(4)));
-                                    SaveText(fileName+".csv", dateFormat.format(date)+","+list.get(0)+ "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) +","+state+","+vmPressure+"\n");
-                                    if(first_run) {
-                                        if (init_pressure==-1)
-                                            init_pressure = pressure * initial_Cache / 100;
+                                    Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+                                    SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + vmPressure + "\n");
+
+                                    if (first_run == true )
                                         PassSizeToNative(init_pressure * 1024 * 1024, repeat);
-                                    }
-                                    else {
-                                            PassSizeToNative(pressure * 1024 * 1024, repeat);
-                                    }
-                                    first_run=false;
-                                    //  activity.updateClient(list);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
+                                    else
+                                        PassSizeToNative(pressure * 1024 * 1024, repeat);
+
+                                    first_run = false;
+
                                 }
+                            }, 0, duration, TimeUnit.MILLISECONDS);
+                }else
+                {
+
+                    List<Integer> list=findMemoryStats(activityManager);
+
+                    initial_Cache = list.get(3) + list.get(4);
+
+                    double vmPressure = (double) (((initial_Cache - (list.get(3) + list.get(4))) * 100) / initial_Cache);
+                    Log.w(TAG, "VM_Pressure: " + vmPressure + "%");
 
 
-                            }
-                        }, 0, duration, TimeUnit.MILLISECONDS);
+                    Date date = new Date();
+                    DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+                    Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+                    SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + vmPressure + "\n");
+
+                    Log.i(TAG, "Calling JNI");
+                    if (init_pressure == -1)
+                        pressure = pressure * initial_Cache / 100;
+                    PassSizeToNative(pressure * 1024 * 1024, repeat);
+
+                    List<Integer> list2=findMemoryStats(activityManager);
+
+                    double newVmPressure = (double) (((initial_Cache - (list2.get(3) + list2.get(4))) * 100) / initial_Cache);
+                    Log.w(TAG, "VM_Pressure: " + newVmPressure + "%");
+
+
+                    date = new Date();
+                    Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+                    SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + newVmPressure + "\n");
+
+
+                }
 //                  timer.scheduleAtFixedRate(new TimerTask() {
 //                   public void run() {
 //
@@ -389,6 +359,42 @@ public class MySystemService extends Service {
     public void onCreate() {
         super.onCreate();
 
+    }
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+    public List<Integer> findMemoryStats(ActivityManager activityManager)
+    {
+        android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
+        try {
+            Process proc = Runtime.getRuntime().exec("cat /proc/meminfo " + pids[1]);
+
+            String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+            Runtime.getRuntime().exec(cmd);
+
+            InputStream is = proc.getInputStream();
+            Map<String, Integer> memMap = getStringFromInputStream(is, 2);
+            ActivityManager.RunningAppProcessInfo rapI = new ActivityManager.RunningAppProcessInfo();
+            ActivityManager.getMyMemoryState(rapI);
+            String state = memoryStat(rapI.lastTrimLevel);
+            ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+            activityManager.getMemoryInfo(memoryInfo);
+            if (memoryInfo.lowMemory) {
+                Log.e(TAG, "low memory and threshold:" + memoryInfo.threshold);
+
+            }
+
+
+            List<Integer> list = new ArrayList<>();
+            list.add(memoryInfoArray[0].getTotalPss() / 1024);
+            list.add(memoryInfoArray[1].getTotalPss() / 1024);
+            list.add(memMap.get("Active:") / 1024);
+            list.add(memMap.get("Cached:") / 1024);
+            list.add(memMap.get("MemFree:") / 1024);
+            list.add(memMap.get("MemTotal:") / 1024);
+            return list;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
     public void SaveText(String sFileName, String sBody){
         try
@@ -457,7 +463,7 @@ public class MySystemService extends Service {
         // timer.purge();
         // timer.cancel();
         scheduler.shutdown();
-        //PassSizeToNative(0,false);
+        PassSizeToNative(0,false);
 //        try {
 //
 //            myOutWriter.close();
