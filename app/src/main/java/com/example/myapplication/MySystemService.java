@@ -180,7 +180,7 @@ public class MySystemService extends Service {
 
             for (AndroidAppProcess process : processes) {
                 // Get some information about the process
-                String processName = process.name;
+                //String processName = process.name;
 //
 //                Stat stat = process.stat();
                 // int pid = stat.getPid();
