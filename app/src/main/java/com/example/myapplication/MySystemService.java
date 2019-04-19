@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Service;
@@ -8,11 +9,13 @@ import android.app.usage.UsageStatsManager;
 import android.content.ComponentCallbacks2;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 
+import android.support.annotation.FontRes;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.widget.Toast;
@@ -155,7 +158,9 @@ public class MySystemService extends Service {
     int []pids={0,0};
     double last_seconds=-1;
     boolean first_run=false;
-    @RequiresApi(api = Build.VERSION_CODES.O)
+    myAsyncTask myAsyncTask;
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     public IBinder onBind(final Intent intent) {
         Toast.makeText(getApplicationContext(),"Service Started",Toast.LENGTH_SHORT).show();
@@ -225,6 +230,7 @@ public class MySystemService extends Service {
                 BufferedReader br = new BufferedReader(new InputStreamReader(upis));
                 pids[1] = Integer.parseInt(br.readLine().toString());
             }
+            myAsyncTask=new myAsyncTask(activityManager);
 //            final ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
 //            String currentApp = "NULL";
 ////            if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -253,48 +259,57 @@ public class MySystemService extends Service {
                 instance = this;
                 SaveText(fileName+".csv", "time,"+"pressure_pss(MB)"+ "," + processName + "_pss(MB)," + "Active_Memory(MB)"+ "," + "Cached_Memory(MB)" + "," + "Free_Memory(MB)"+","+"VM_Pressure"+"\n");
                 if(repeat==true) {
-                    scheduler.scheduleAtFixedRate
-                            (new Runnable() {
-                                @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-                                public void run() {
+                  //  scheduler.scheduleWithFixedDelay
+                        //    (new Runnable() {
+                        //        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+                        //        public void run() {
                                     // call service
-                                    Log.i(TAG, "Calling JNI");
+                   // myAsyncTask.execute(duration);
+                    while(true) {
+                        Log.i(TAG, "Calling JNI");
 
-                                    String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
-                                    String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
-                                    try {
-                                        Runtime.getRuntime().exec(cmd);
-                                        Runtime.getRuntime().exec(cmd1);
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                    //android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
+                        String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+                        String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                        try {
+                            Runtime.getRuntime().exec(cmd);
+                            Runtime.getRuntime().exec(cmd1);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        //android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
 
-                                    List<Integer> list = findMemoryStats(activityManager);
+                        List<Integer> list = findMemoryStats(activityManager);
 
-                                    if (first_run)
-                                        initial_Cache = list.get(3) + list.get(4);
+                        if (first_run)
+                            initial_Cache = list.get(3) + list.get(4);
 
-                                    if ((list.get(3) + list.get(4)) > initial_Cache)
-                                        initial_Cache = list.get(3) + list.get(4);
-                                    double vmPressure = (double) (((initial_Cache - (list.get(3) + list.get(4))) * 100) / initial_Cache);
-                                    Log.w(TAG, "VM_Pressure: " + vmPressure + "%");
+                        if ((list.get(3) + list.get(4)) > initial_Cache)
+                            initial_Cache = list.get(3) + list.get(4);
+                        double vmPressure = (double) (((initial_Cache - (list.get(3) + list.get(4))) * 100) / initial_Cache);
+                        Log.w(TAG, "VM_Pressure: " + vmPressure + "%");
 
 
-                                    Date date = new Date();
-                                    DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-                                    Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
-                                    SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + vmPressure + "\n");
+                        Date date = new Date();
+                        DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+                        Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+                        SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + vmPressure + "\n");
 
-                                    if (first_run == true )
-                                        PassSizeToNative(init_pressure * 1024 * 1024, repeat);
-                                    else
-                                        PassSizeToNative(pressure * 1024 * 1024, repeat);
+                        if (first_run == true)
+                            PassSizeToNative(init_pressure * 1024 * 1024, repeat);
+                        else
+                            PassSizeToNative(pressure * 1024 * 1024, repeat);
 
-                                    first_run = false;
+                        first_run = false;
+                        try {
+                            Thread.sleep(duration);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
 
-                                }
-                            }, 0, duration, TimeUnit.MILLISECONDS);
+
+                               // }
+                          //  }, 0, duration, TimeUnit.MILLISECONDS);
                 }else
                 {
 
@@ -366,6 +381,61 @@ public class MySystemService extends Service {
     public void onCreate() {
         super.onCreate();
 
+    }
+    public class  myAsyncTask extends AsyncTask<Integer,Void,Void>
+    {
+        ActivityManager activityManager;
+        myAsyncTask(ActivityManager activityManager)
+        {
+            this.activityManager=activityManager;
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+        @Override
+        protected Void doInBackground(Integer... integers) {
+            while(true) {
+                Log.i(TAG, "Calling JNI");
+
+                String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+                String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                try {
+                    Runtime.getRuntime().exec(cmd);
+                    Runtime.getRuntime().exec(cmd1);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                //android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
+
+                List<Integer> list = findMemoryStats(activityManager);
+
+                if (first_run)
+                    initial_Cache = list.get(3) + list.get(4);
+
+                if ((list.get(3) + list.get(4)) > initial_Cache)
+                    initial_Cache = list.get(3) + list.get(4);
+                double vmPressure = (double) (((initial_Cache - (list.get(3) + list.get(4))) * 100) / initial_Cache);
+                Log.w(TAG, "VM_Pressure: " + vmPressure + "%");
+
+
+                Date date = new Date();
+                DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+                Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+                SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + vmPressure + "\n");
+
+                if (first_run == true)
+                    PassSizeToNative(init_pressure * 1024 * 1024, repeat);
+                else
+                    PassSizeToNative(pressure * 1024 * 1024, repeat);
+
+                first_run = false;
+                try {
+                    Thread.sleep(duration);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+           // return null;
+        }
     }
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     public List<Integer> findMemoryStats(ActivityManager activityManager)
@@ -468,8 +538,10 @@ public class MySystemService extends Service {
     public void onDestroy() {
         // timer.purge();
         // timer.cancel();
-        scheduler.shutdown();
+        //scheduler.shutdown();
+        myAsyncTask.cancel(true);
         PassSizeToNative(0,false);
+
 //        try {
 //
 //            myOutWriter.close();
