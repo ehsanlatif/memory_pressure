@@ -260,8 +260,15 @@ public class MySystemService extends Service {
                                     // call service
                                     Log.i(TAG, "Calling JNI");
 
-
-                                    android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
+                                    String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+                                    String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                                    try {
+                                        Runtime.getRuntime().exec(cmd);
+                                        Runtime.getRuntime().exec(cmd1);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    //android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
 
                                     List<Integer> list = findMemoryStats(activityManager);
 
@@ -367,8 +374,7 @@ public class MySystemService extends Service {
         try {
             Process proc = Runtime.getRuntime().exec("cat /proc/meminfo " + pids[1]);
 
-            String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
-            Runtime.getRuntime().exec(cmd);
+
 
             InputStream is = proc.getInputStream();
             Map<String, Integer> memMap = getStringFromInputStream(is, 2);
