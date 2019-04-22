@@ -266,9 +266,10 @@ public class MySystemService extends Service {
                                     // call service
                     String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
                     String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                    String[] cmd2 = {"su", "-c", "renice -20 "+pids[0]};
                     try {
                         Runtime.getRuntime().exec(cmd);
-                        Runtime.getRuntime().exec(cmd1);
+                        Runtime.getRuntime().exec(cmd2);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -323,10 +324,11 @@ public class MySystemService extends Service {
 
 
                     String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
-                    String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                  //  String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                    String[] cmd2 = {"su", "-c", "toybox renice -n -20 -p "+pids[0]};
                     try {
                         Runtime.getRuntime().exec(cmd);
-                        Runtime.getRuntime().exec(cmd1);
+                        Runtime.getRuntime().exec(cmd2);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -415,10 +417,11 @@ public class MySystemService extends Service {
                 Log.i(TAG, "Calling JNI");
 
                 String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
-                String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                //String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                String[] cmd2 = {"su", "-c", "renice -20 "+pids[0]};
                 try {
                     Runtime.getRuntime().exec(cmd);
-                    Runtime.getRuntime().exec(cmd1);
+                    Runtime.getRuntime().exec(cmd2);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

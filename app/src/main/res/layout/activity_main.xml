@@ -100,7 +100,7 @@
             android:layout_marginRight="8dp"
             android:hint="Process Name"
             android:inputType="text"
-            android:text="com.example.myapplication"
+            android:text="com.google.android.gm"
             android:textSize="14sp"
             app:fontFamily="@font/montserrat_alternates"
             app:layout_constraintEnd_toEndOf="parent"
