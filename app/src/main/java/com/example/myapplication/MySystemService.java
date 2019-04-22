@@ -264,54 +264,72 @@ public class MySystemService extends Service {
                         //        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
                         //        public void run() {
                                     // call service
-                   // myAsyncTask.execute(duration);
-                    while(true) {
-                        Log.i(TAG, "Calling JNI");
-
-                        String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
-                        String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
-                        try {
-                            Runtime.getRuntime().exec(cmd);
-                            Runtime.getRuntime().exec(cmd1);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        //android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
-
-                        List<Integer> list = findMemoryStats(activityManager);
-
-                        if (first_run)
-                            initial_Cache = list.get(3) + list.get(4);
-
-                        if ((list.get(3) + list.get(4)) > initial_Cache)
-                            initial_Cache = list.get(3) + list.get(4);
-                        double vmPressure = (double) (((initial_Cache - (list.get(3) + list.get(4))) * 100) / initial_Cache);
-                        Log.w(TAG, "VM_Pressure: " + vmPressure + "%");
-
-
-                        Date date = new Date();
-                        DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-                        Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
-                        SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + vmPressure + "\n");
-
-                        if (first_run == true)
-                            PassSizeToNative(init_pressure * 1024 * 1024, repeat);
-                        else
-                            PassSizeToNative(pressure * 1024 * 1024, repeat);
-
-                        first_run = false;
-                        try {
-                            Thread.sleep(duration);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                    String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+                    String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                    try {
+                        Runtime.getRuntime().exec(cmd);
+                        Runtime.getRuntime().exec(cmd1);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
+                    myAsyncTask.execute(duration);
+//                    while(true) {
+//                        Log.i(TAG, "Calling JNI");
+//
+//                        String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+//                        String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+//                        try {
+//                            Runtime.getRuntime().exec(cmd);
+//                            Runtime.getRuntime().exec(cmd1);
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                        //android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
+//
+//                        List<Integer> list = findMemoryStats(activityManager);
+//
+//                        if (first_run)
+//                            initial_Cache = list.get(3) + list.get(4);
+//
+//                        if ((list.get(3) + list.get(4)) > initial_Cache)
+//                            initial_Cache = list.get(3) + list.get(4);
+//                        double vmPressure = (double) (((initial_Cache - (list.get(3) + list.get(4))) * 100) / initial_Cache);
+//                        Log.w(TAG, "VM_Pressure: " + vmPressure + "%");
+//
+//
+//                        Date date = new Date();
+//                        DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+//                        Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+//                        SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + vmPressure + "\n");
+//
+//                        if (first_run == true)
+//                            PassSizeToNative(init_pressure * 1024 * 1024, repeat);
+//                        else
+//                            PassSizeToNative(pressure * 1024 * 1024, repeat);
+//
+//                        first_run = false;
+//                        try {
+//                            Thread.sleep(duration);
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
 
 
                                // }
                           //  }, 0, duration, TimeUnit.MILLISECONDS);
                 }else
                 {
+
+
+                    String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+                    String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                    try {
+                        Runtime.getRuntime().exec(cmd);
+                        Runtime.getRuntime().exec(cmd1);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
                     List<Integer> list=findMemoryStats(activityManager);
 
