@@ -356,15 +356,15 @@ public class MySystemService extends Service {
                         pressure = pressure * initial_Cache / 100;
                     PassSizeToNative(pressure * 1024 * 1024, repeat);
 
-                    List<Integer> list2=findMemoryStats(activityManager);
-
-                    double newVmPressure = (double) (((initial_Cache - (list2.get(3) + list2.get(4))) * 100) / initial_Cache);
-                    Log.w(TAG, "VM_Pressure: " + newVmPressure + "%");
-
-
-                    date = new Date();
-                    Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
-                    SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + newVmPressure + "\n");
+//                    List<Integer> list2=findMemoryStats(activityManager);
+//
+//                    double newVmPressure = (double) (((initial_Cache - (list2.get(3) + list2.get(4))) * 100) / initial_Cache);
+//                    Log.w(TAG, "VM_Pressure: " + newVmPressure + "%");
+//
+//
+//                    date = new Date();
+//                    Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
+//                    SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + newVmPressure + "\n");
 
 
                 }
