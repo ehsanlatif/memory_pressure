@@ -159,6 +159,7 @@ public class MySystemService extends Service {
     double last_seconds=-1;
     boolean first_run=false;
     myAsyncTask myAsyncTask;
+    constPressureTask constPressureTaskExecutor;
     @TargetApi(Build.VERSION_CODES.KITKAT)
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
@@ -231,6 +232,7 @@ public class MySystemService extends Service {
                 pids[1] = Integer.parseInt(br.readLine().toString());
             }
             myAsyncTask=new myAsyncTask(activityManager);
+            constPressureTaskExecutor =new constPressureTask(activityManager);
 //            final ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
 //            String currentApp = "NULL";
 ////            if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -324,15 +326,18 @@ public class MySystemService extends Service {
 
 
                     String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+//                    String[] cmd1 = {"su", "-c", "chmod -w /proc/" + pids[0] + "/oom_adj"};
+
                   //  String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
                     String[] cmd2 = {"su", "-c", "toybox renice -n -20 -p "+pids[0]};
                     try {
                         Runtime.getRuntime().exec(cmd);
+                       // Runtime.getRuntime().exec(cmd1);
                         Runtime.getRuntime().exec(cmd2);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
+                    constPressureTaskExecutor.execute();
                     List<Integer> list=findMemoryStats(activityManager);
 
                     initial_Cache = list.get(3) + list.get(4);
@@ -369,7 +374,7 @@ public class MySystemService extends Service {
 //                    Date date=new Date();
 //                    DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 //                    android.os.Debug.MemoryInfo[] memoryInfoArray = activityManager.getProcessMemoryInfo(pids);
-//                        Log.i(TAG, String.format("** Time: %s => PSS: %.3f **\n",dateFormat.format(date), ((double)memoryInfoArray[1].getTotalPss()/1024)));
+//                        Log.i(TAG, String.format("** Time: %s => PSS: %.3f Log.i(TAG,**\n",dateFormat.format(date), ((double)memoryInfoArray[1].getTotalPss()/1024)));
 //                         SaveText(fileName+".csv", dateFormat.format(date)+","+memoryInfoArray[1].getTotalPss()+ "\n");
 //                    }
 //
@@ -401,6 +406,35 @@ public class MySystemService extends Service {
     public void onCreate() {
         super.onCreate();
 
+    }
+    public class  constPressureTask extends AsyncTask<Integer,Void,Void> {
+        ActivityManager activityManager;
+
+        constPressureTask(ActivityManager activityManager) {
+            this.activityManager = activityManager;
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+        @Override
+        protected Void doInBackground(Integer... integers) {
+            while (true) {
+                Log.i(TAG,"repeat");
+                String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+                //  String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                String[] cmd2 = {"su", "-c", "toybox renice -n -20 -p "+pids[0]};
+                try {
+                    Runtime.getRuntime().exec(cmd);
+                    Thread.sleep(1000);
+                    Runtime.getRuntime().exec(cmd2);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+
+            }
+        }
     }
     public class  myAsyncTask extends AsyncTask<Integer,Void,Void>
     {
@@ -561,6 +595,7 @@ public class MySystemService extends Service {
         // timer.cancel();
         //scheduler.shutdown();
         myAsyncTask.cancel(true);
+        constPressureTaskExecutor.cancel(true);
         PassSizeToNative(0,false);
 
 //        try {
