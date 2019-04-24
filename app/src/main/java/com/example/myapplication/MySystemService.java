@@ -26,6 +26,7 @@ import com.jaredrummler.android.processes.models.Stat;
 import com.jaredrummler.android.processes.models.Statm;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -268,7 +269,7 @@ public class MySystemService extends Service {
                                     // call service
                     String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
                     String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
-                    String[] cmd2 = {"su", "-c", "renice -20 "+pids[0]};
+                    String[] cmd2 = {"su", "-c", "toybox renice -n -20  -p "+pids[0]};
                     try {
                         Runtime.getRuntime().exec(cmd);
                         Runtime.getRuntime().exec(cmd2);
@@ -325,18 +326,18 @@ public class MySystemService extends Service {
                 {
 
 
-                    String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
-//                    String[] cmd1 = {"su", "-c", "chmod -w /proc/" + pids[0] + "/oom_adj"};
-
-                  //  String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
-                    String[] cmd2 = {"su", "-c", "toybox renice -n -20 -p "+pids[0]};
-                    try {
-                        Runtime.getRuntime().exec(cmd);
-                       // Runtime.getRuntime().exec(cmd1);
-                        Runtime.getRuntime().exec(cmd2);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+//                    String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
+////                    String[] cmd1 = {"su", "-c", "chmod -w /proc/" + pids[0] + "/oom_adj"};
+//
+//                  //  String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+//                    String[] cmd2 = {"su", "-c", "toybox renice -n -20 -p "+pids[0]};
+//                    try {
+//                        Runtime.getRuntime().exec(cmd).destroy();
+//                       // Runtime.getRuntime().exec(cmd1);
+//                        Runtime.getRuntime().exec(cmd2).destroy();
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
                     constPressureTaskExecutor.execute();
                     List<Integer> list=findMemoryStats(activityManager);
 
@@ -423,9 +424,27 @@ public class MySystemService extends Service {
                 //  String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
                 String[] cmd2 = {"su", "-c", "toybox renice -n -20 -p "+pids[0]};
                 try {
-                    Runtime.getRuntime().exec(cmd);
+
+                   Process p=Runtime.getRuntime().exec(cmd);
+                   int n=p.waitFor();
+                   p.destroy();
+//                    DataOutputStream os = new DataOutputStream(p.getOutputStream());
+//                    os.writeBytes("exit\n");
+//                    os.flush();
+//                    os.close();
+//                    p.waitFor();
+
                     Thread.sleep(1000);
-                    Runtime.getRuntime().exec(cmd2);
+
+                    Process p1=Runtime.getRuntime().exec(cmd2);
+                    int n1 = p1.waitFor();
+                    //Thread.sleep(1000);
+                    p1.destroy();
+//                    DataOutputStream os1 = new DataOutputStream(p1.getOutputStream());
+//                    os1.writeBytes("exit\n");
+//                    os1.flush();
+//                    os1.close();
+//                    p1.waitFor();
                 } catch (IOException e) {
                     e.printStackTrace();
                 } catch (InterruptedException e) {
@@ -451,10 +470,11 @@ public class MySystemService extends Service {
                 Log.i(TAG, "Calling JNI");
 
                 String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
-                //String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
-                String[] cmd2 = {"su", "-c", "renice -20 "+pids[0]};
+                String[] cmd1 = {"su", "-c", "echo -1000 > /proc/" + pids[0] + "/oom_score_adj"};
+                String[] cmd2 = {"su", "-c", "toybox renice -n -20  -p "+pids[0]};
                 try {
                     Runtime.getRuntime().exec(cmd);
+                    Runtime.getRuntime().exec(cmd1);
                     Runtime.getRuntime().exec(cmd2);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -512,6 +532,7 @@ public class MySystemService extends Service {
                 Log.e(TAG, "low memory and threshold:" + memoryInfo.threshold);
 
             }
+            proc.destroy();
 
 
             List<Integer> list = new ArrayList<>();
