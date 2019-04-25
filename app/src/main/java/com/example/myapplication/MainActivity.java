@@ -74,8 +74,7 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
 //            /button.setText("Stop");
 //            started=true;
         }
-        //ghsh
-       //hsgdhgsv sdghsgd
+
         button=findViewById(R.id.button);
         period_layout=findViewById(R.id.textInputLayout3);
         pressure=findViewById(R.id.pressure);
