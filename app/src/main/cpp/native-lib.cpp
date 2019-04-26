@@ -23,7 +23,7 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 
 //    int ArraySize=size;
 //
-    int id=0;
+    int id = 0;
 //    pid_t pid = -1;
 //    DIR *dir;
 //    FILE *fp;
@@ -71,14 +71,14 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 //    if (file != NULL)
 //    {
 
-        //for(int i=0;i<10;i++) {
-        if (repeat || s.size() == 0) {
+    //for(int i=0;i<10;i++) {
+    if (repeat || s.size() == 0) {
 
-            while (size >= 5242880) {
-              //  if (size >= 104857600) {
-                string sstr(5242880, ' ');
-                s.push_back(sstr);
-                size -= 5242880;
+        while (size >= 5242880) {
+            //  if (size >= 104857600) {
+            string sstr(5242880, ' ');
+            s.push_back(sstr);
+            size -= 5242880;
 //            }else if(size < 104857600){
 //                    //if(size >= 52428800) {
 //                        string sstr(1048576, ' ');
@@ -90,19 +90,29 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 ////                        size -= 524288;
 ////                    }
 //            }
-            }
-            if (size < 5242880) {
-                string sstr(size, ' ');
-                s.push_back(sstr);
-
-            }
-        } else if(repeat ==false && size ==0){
-            s.clear();
         }
-            __android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "Self_PSS: %d", s.size());
+        if (size < 5242880) {
+            string sstr(size, ' ');
+            s.push_back(sstr);
 
+        }
+    } else if (repeat == false && size == 0) {
+        s.clear();
+    }
 
-       // int hertz = sysconf(_SC_CLK_TCK);
+//    int pid = getpid();
+//    const char *pid_char = to_string(pid).c_str();
+//    char proc_dir[1024] = "su -c 'echo -17 > /proc/";
+//    strcat(proc_dir, pid_char);
+//    strcat(proc_dir, "/oom_adj'");
+//    system(proc_dir);//String[] cmd2 = { "su","-c","toybox renice -n -20 -p "+pids[0]};
+//
+//    char proc_nice[1024] = "su -c toybox renice -n -20 -p ";
+//    strcat(proc_nice, pid_char);
+//    system(proc_nice);
+    __android_log_print(ANDROID_LOG_ERROR, "TRACKERS", "Self_PSS: %d", s.size());
+
+    // int hertz = sysconf(_SC_CLK_TCK);
 //            int tSize = 0, resident = 0, share = 0;
 //            int tSize1 = 0, resident1 = 0, share1 = 0;
 //            ifstream buffer("/proc/self/statm");
@@ -131,7 +141,7 @@ Java_com_example_myapplication_MySystemService_PassSizeToNative(
 //        //}
 //        fflush(file);
 //        fclose(file);
-        //}
+    //}
 //    }
     return ;//id;//env->NewStringUTF(hello.c_str());
 }

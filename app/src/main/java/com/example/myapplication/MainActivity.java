@@ -9,6 +9,7 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
@@ -26,17 +27,17 @@ import android.widget.Toast;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements MySystemService.Callbacks{
+
+public class MainActivity extends AppCompatActivity{
 
     // Used to load the 'native-lib' library on application startup.
 
-    private static boolean started=false;
+    private static boolean started=MySystemService.isStatred;
     TextInputLayout period_layout;
     TextInputEditText pressure,process_name,period,output;
     RadioGroup radioGroup;
     TextView total_memory,process_pressure,total_pressure,process_pss,free_memory,repeat;
     Intent serviceIntent;
-    MySystemService myService;
     Switch aSwitch;
      Button button;
     @Override
@@ -45,9 +46,9 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
         setContentView(R.layout.activity_main);
 
         // Example of a call to a native method
-        if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED)
+        if(ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)!= PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WAKE_LOCK)!= PackageManager.PERMISSION_GRANTED )
         {
-            ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
+            ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.WAKE_LOCK},1);
         }
         serviceIntent = new Intent(MainActivity.this, MySystemService.class);
         Bundle extras=getIntent().getExtras();
@@ -68,9 +69,14 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
             serviceIntent.putExtra("initial_pressure", init_pers);
 
             Toast.makeText(getApplicationContext(),pres + " , "+proc+" , "+per+" , "+output_file,Toast.LENGTH_LONG).show();
-            //  startService(serviceIntent); //Starting the service
-            bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
-            //textView.setText("Service is Running!");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            }else{
+                startService(serviceIntent);
+                finish();
+            }
+            //Starting the service
+           // MySystemService.enqueueWork(getApplicationContext(), serviceIntent);            //textView.setText("Service is Running!");
 //            /button.setText("Stop");
 //            started=true;
         }
@@ -122,25 +128,29 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!started)
-                {
+                if (!started) {
 
 
-                    if(!MySystemService.isInstanceCreated()) {
-                        if(!(output.getText().toString().isEmpty() || process_name.getText().toString().isEmpty() || pressure.getText().toString().isEmpty())) {
-                            if(aSwitch.isChecked()){
+                    if (!MySystemService.isInstanceCreated()) {
+                        if (!(output.getText().toString().isEmpty() || process_name.getText().toString().isEmpty() || pressure.getText().toString().isEmpty())) {
+                            if (aSwitch.isChecked()) {
                                 serviceIntent.putExtra("filename", output.getText().toString());
                                 serviceIntent.putExtra("process", process_name.getText().toString());
                                 serviceIntent.putExtra("pressure", Integer.parseInt(pressure.getText().toString()));
                                 serviceIntent.putExtra("repeat", false);
-                                serviceIntent.putExtra("duration",  1000);
+                                serviceIntent.putExtra("duration", 1000);
                                 serviceIntent.putExtra("initial_pressure", -1);
-                                bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    startForegroundService(serviceIntent);
+                                }else{
+                                    startService(serviceIntent);
+                                }
+                                finish();
                                 //textView.setText("Service is Running!");
                                 button.setText("Stop");
                                 started = true;
 
-                            }else {
+                            } else {
                                 boolean repeat = radioGroup.getCheckedRadioButtonId() == R.id.repeat_yes;
                                 if (!(repeat && period.getText().toString().isEmpty())) {
                                     serviceIntent.putExtra("filename", output.getText().toString());
@@ -152,58 +162,31 @@ public class MainActivity extends AppCompatActivity implements MySystemService.C
 
 
                                     //  startService(serviceIntent); //Starting the service
-                                    bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE);
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                        startForegroundService(serviceIntent);
+                                    }else{
+                                        startService(serviceIntent);
+                                    }
+                                    finish();
                                     //textView.setText("Service is Running!");
                                     button.setText("Stop");
                                     started = true;
                                 } else
                                     Toast.makeText(getApplicationContext(), "Enter repetition period in ms", Toast.LENGTH_SHORT).show();
                             }
-                        }else
-                            Toast.makeText(getApplicationContext(),"Fill all required Fields",Toast.LENGTH_SHORT).show();
+                        } else
+                            Toast.makeText(getApplicationContext(), "Fill all required Fields", Toast.LENGTH_SHORT).show();
                     }
 
-                }else {
-
-
-                    if(MySystemService.isInstanceCreated()) {
-                        unbindService(mConnection);
-                       // stopService(serviceIntent);
-                        //textView.setText("No Service is Running! ");
-                        started=false;
-                        button.setText("Start");
-                    }
-
+                } else {
+                    stopService(serviceIntent);
+                    //textView.setText("No Service is Running! ");
+                    started = false;
+                    button.setText("Start");
                 }
+
             }
         });
-    }
 
-    private ServiceConnection mConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName className,
-                                       IBinder service) {
-            Toast.makeText(MainActivity.this, "onServiceConnected called", Toast.LENGTH_SHORT).show();
-            // We've binded to LocalService, cast the IBinder and get LocalService instance
-            MySystemService.LocalBinder binder = (MySystemService.LocalBinder) service;
-            myService = binder.getServiceInstance(); //Get instance of your service!
-            myService.registerClient(MainActivity.this); //Activity register in the service as client for callabcks!
-
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            Toast.makeText(MainActivity.this, "onServiceDisconnected called", Toast.LENGTH_SHORT).show();
-        }
-    };
-
-    @Override
-    public void updateClient(List<Integer> data) {
-    total_memory.setText(data.get(5)+"MB");
-    process_pressure.setText(data.get(0)+"MB");
-    total_pressure.setText(data.get(2)+"MB");
-    process_pss.setText(data.get(1)+"MB");
-    free_memory.setText(data.get(4)+"MB");
     }
 }
