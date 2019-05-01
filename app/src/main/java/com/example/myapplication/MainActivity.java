@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity{
         {
             ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.WAKE_LOCK},1);
         }
-        serviceIntent = new Intent(MainActivity.this, MySystemService.class);
+        serviceIntent = new Intent(getApplicationContext(), MySystemService.class);
         Bundle extras=getIntent().getExtras();
 
         if(extras!=null && extras.getInt("pressure",0)!=0)
