@@ -35,6 +35,7 @@ import android.widget.Toast;
 
 import com.jaredrummler.android.processes.AndroidProcesses;
 import com.jaredrummler.android.processes.models.AndroidAppProcess;
+import com.jaredrummler.android.processes.models.AndroidProcess;
 import com.jaredrummler.android.processes.models.Stat;
 import com.jaredrummler.android.processes.models.Statm;
 
@@ -65,6 +66,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE;
 import static android.content.ContentValues.TAG;
@@ -74,46 +80,64 @@ public class MySystemService extends Service {
         System.loadLibrary("native-lib");
     }
 
-    public String memoryStat(int level) {
+    @Override
+    public void onTrimMemory(int level) {
+        super.onTrimMemory(level);
 
         switch (level) {
 
             case ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN:
 
-                return "";
+
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE: {
                 Log.d(TAG, "on Moderat Pressure");
-                return "Moderat";
-            }
-            case ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW: {
-                Log.d(TAG, "on High Pressure");
-                return "High";
+                sendState("Moderate");
+
             }
 
             case ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL:{
                 Log.d(TAG,"on Critical Pressure");
-                return "Critical";
+                sendState("Critical");
+
+
             }
 
-            case ComponentCallbacks2.TRIM_MEMORY_BACKGROUND:
-            {
-                //Log.d(TAG, "on Moderat Pressure");
-                return"Same";
-            }
-
-            case ComponentCallbacks2.TRIM_MEMORY_MODERATE:
-            {
-                Log.d(TAG, "on Moderat Pressure");
-                return"Moderat";
-            }
-            case ComponentCallbacks2.TRIM_MEMORY_COMPLETE:
-
-                Log.d(TAG, "LMKD kicked In");
-                return"LMKD kicked In";
-
-            default:
-                return "same";
         }
+    }
+    private void sendState(String state) {
+        //Obtain an instance of Retrofit by calling the static method.
+        Retrofit retrofit = NetworkClient.getRetrofitClient();
+        /*
+        The main purpose of Retrofit is to create HTTP calls from the Java interface based on the annotation associated with each method. This is achieved by just passing the interface class as parameter to the create method
+        */
+        StateApi stateAPI = retrofit.create(StateApi.class);
+        /*
+        Invoke the method corresponding to the HTTP request which will return a Call object. This Call object will used to send the actual network request with the specified parameters
+        */
+        Call <String> call = stateAPI.sendState(state);
+        /*
+        This is the line which actually sends a network request. Calling enqueue() executes a call asynchronously. It has two callback listeners which will invoked on the main thread
+        */
+        call.enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+                /*This is the success callback. Though the response type is JSON, with Retrofit we get the response in the form of WResponse POJO class
+                 */
+                if (response.body() != null) {
+                    String stateback = response.body();
+                    Toast.makeText(getApplicationContext(),stateback,Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                /*
+                Error callback
+
+                */
+                Toast.makeText(getApplicationContext(),"Failure",Toast.LENGTH_SHORT).show();
+
+            }
+        });
     }
     public native int PassSizeToNative(int a,boolean b);
 
@@ -199,6 +223,50 @@ public class MySystemService extends Service {
                     constPressureTaskExecutor.execute();
                 }
             }).start();
+//            new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    while (true) {
+//                        try {
+//                            List<AndroidProcess> processes = AndroidProcesses.getRunningProcesses();
+//                            for (AndroidProcess process : processes) {
+//                                if (process.name.contains(processName)) {
+//                                    String[] cmd = {"su", "-c", "taskset -ap 4 " + process.pid};
+//                                    Process p = Runtime.getRuntime().exec(cmd);
+//                                    p.waitFor();
+//                                    p.destroy();
+//                                }
+//                                Thread.sleep(2000);
+//
+//                            }
+//                        } catch (InterruptedException e1) {
+//                            e1.printStackTrace();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }).start();
+//            new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    while (true) {
+//                        try {
+//
+//                            String[] cmd1 = {"su", "-c", "taskset -ap 1 55"};
+//                            Process p1 = Runtime.getRuntime().exec(cmd1);
+//                            p1.waitFor();
+//                            p1.destroy();
+//                            // }
+//                            Thread.sleep(2000);
+//                        } catch (InterruptedException e1) {
+//                            e1.printStackTrace();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }).start();
 
 
             if (intent != null && intent.getExtras() != null) {
@@ -220,17 +288,17 @@ public class MySystemService extends Service {
                         }
                     }
 
-                    if (pids[1] == 0) {
-                        String[] cmd = {"su", "-c", "pidof " + processName};
-                        Process proc2 = Runtime.getRuntime().exec(cmd);
-                        InputStream upis = proc2.getInputStream();
-                        BufferedReader br = new BufferedReader(new InputStreamReader(upis));
-                        pids[1] = Integer.parseInt(br.readLine().toString());
-                    }
+//                    if (pids[1] == 0) {
+//                        String[] cmd = {"su", "-c", "pidof " + processName};
+//                        Process proc2 = Runtime.getRuntime().exec(cmd);
+//                        InputStream upis = proc2.getInputStream();
+//                        BufferedReader br = new BufferedReader(new InputStreamReader(upis));
+//                        pids[1] = Integer.parseInt(br.readLine().toString());
+//                    }
 
 
                     first_run = true;
-                    if (processName == null || pids[1] != 0) {
+                    if (processName != null) {
                         instance = this;
                         SaveText(fileName + ".csv", "time," + "pressure_pss(MB)" + "," + processName + "_pss(MB)," + "Active_Memory(MB)" + "," + "Cached_Memory(MB)" + "," + "Free_Memory(MB)" + "," + "VM_Pressure" + "\n");
                         if (repeat == true) {
@@ -258,10 +326,10 @@ public class MySystemService extends Service {
                                         Log.i(TAG, String.format("**** Time: %s ==> Pressure: %d => PSS: %d => Active: %d => Cached: %d => Free: %d **\n", dateFormat.format(date), list.get(0), list.get(1), list.get(2), list.get(3), list.get(4)));
                                         SaveText(fileName + ".csv", dateFormat.format(date) + "," + list.get(0) + "," + list.get(1) + "," + list.get(2) + "," + list.get(3) + "," + list.get(4) + "," + vmPressure + "\n");
 
-                                    if (first_run == true)
-                                        PassSizeToNative(init_pressure * 1024 * 1024, repeat);
-                                    else
-                                        PassSizeToNative(pressure * 1024 * 1024, repeat);
+                                        if (first_run == true)
+                                            PassSizeToNative(init_pressure * 1024 * 1024, repeat);
+                                        else
+                                            PassSizeToNative(pressure * 1024 * 1024, repeat);
 
                                         first_run = false;
                                         try {
@@ -329,18 +397,33 @@ public class MySystemService extends Service {
         protected Void doInBackground(Integer... integers) {
             while (true) {
                 try {
-                    List<AndroidAppProcess> processes = AndroidProcesses.getRunningAppProcesses();
-                    for (AndroidAppProcess process : processes) {
-                        if (pids[0] == process.stat().getPid() && process.oom_adj() >= 0) {
+                    List<AndroidProcess> processes = AndroidProcesses.getRunningProcesses();
+                    for (AndroidProcess process : processes) {
+                        if (pids[0] == process.pid && process.oom_adj() >= 0) {
                             Log.e(TAG, "Changing OOM");
                             String[] cmd = {"su", "-c", "echo -17 > /proc/" + pids[0] + "/oom_adj"};
                             Process p = Runtime.getRuntime().exec(cmd);
                             p.waitFor();
                             p.destroy();
-                            break;
                         }
+//                        if (process.name.contains(processName)) {
+////
+////                            Log.e(TAG, "Changing AFFinity of chromium As it was: "+process.stat().processor());
+//                            String[] cmd = {"su", "-c", "taskset -ap 2 "+ process.pid};
+//                            Process p = Runtime.getRuntime().exec(cmd);
+//                            p.waitFor();
+//                            p.destroy();
+//                        }
+////                        if (process.pid==55 && process.stat().processor() != 0) {
+////                            Log.e(TAG, "Changing AFFinity of kswaps");
+//                        String[] cmd1 = {"su", "-c", "taskset -ap 1 55"};
+//                        Process p1 = Runtime.getRuntime().exec(cmd1);
+//                        p1.waitFor();
+//                        p1.destroy();
+//                        // }
+//
                     }
-                    Thread.sleep(2000);
+                    Thread.sleep(200);
                 } catch(InterruptedException e1){
                     e1.printStackTrace();
                 } catch(IOException e){
@@ -362,7 +445,7 @@ public class MySystemService extends Service {
             Map<String, Integer> memMap = getStringFromInputStream(is, 2);
             ActivityManager.RunningAppProcessInfo rapI = new ActivityManager.RunningAppProcessInfo();
             ActivityManager.getMyMemoryState(rapI);
-            String state = memoryStat(rapI.lastTrimLevel);
+            //String state = memoryStat(rapI.lastTrimLevel);
             ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
             activityManager.getMemoryInfo(memoryInfo);
             if (memoryInfo.lowMemory) {
